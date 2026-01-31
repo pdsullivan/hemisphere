@@ -20,21 +20,43 @@ A macOS menu bar app that sets your desktop wallpaper to a live weather radar ma
 
 ## Installation
 
+### 1. Clone and install dependencies
+
 ```bash
-# Clone the repo
 git clone https://github.com/pdsullivan/hemisphere.git
 cd hemisphere
-
-# Install Node dependencies
 npm install
+```
 
-# Build the Swift app
+### 2. Build the Swift app
+
+```bash
 cd Hemisphere
 swift build
-
-# Run
-.build/debug/Hemisphere
+cd ..
 ```
+
+### 3. Run from the project root
+
+```bash
+./Hemisphere/.build/debug/Hemisphere
+```
+
+**Important:** Run from the project root directory (not from inside `Hemisphere/`) so the app can find `generate.js` and `map.html`.
+
+### 4. Grant permissions
+
+On first run, macOS will ask for permission to control System Events. Click **OK** — this is needed to set wallpaper across all Spaces.
+
+### Keeping it running
+
+To run Hemisphere in the background:
+
+```bash
+nohup ./Hemisphere/.build/debug/Hemisphere &
+```
+
+Or add it to your Login Items in System Settings > General > Login Items.
 
 ## Usage
 
@@ -60,6 +82,21 @@ Set `HEMISPHERE_SCRIPTS_DIR` environment variable to customize the scripts locat
 ```bash
 export HEMISPHERE_SCRIPTS_DIR=/path/to/hemisphere
 ```
+
+## Troubleshooting
+
+**Wallpaper not updating?**
+- Check `~/hemisphere.log` for errors
+- Make sure you granted System Events permission
+- Verify Node.js is installed: `node --version`
+
+**Script not found error?**
+- Run from the project root directory, not from `Hemisphere/`
+- Or set `HEMISPHERE_SCRIPTS_DIR` to the full path containing `generate.js`
+
+**Blank or partial wallpaper?**
+- The map tiles may still be loading. Try Refresh Wallpaper again.
+- Check your internet connection
 
 ## License
 
