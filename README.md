@@ -1,103 +1,98 @@
 # Hemisphere
 
-A macOS menu bar app that sets your desktop wallpaper to a live weather radar map.
+a macos menu bar app that sets your desktop wallpaper to a live weather radar map.
 
 ![Hemisphere Screenshot](screenshot.png)
 
-## Features
+## features
 
-- Live weather radar overlay from RainViewer API
-- Works across all macOS Spaces
-- Three map styles: Satellite, Dark, and Light
-- Auto-refreshes every 10 minutes
-- Menu bar app with quick access to settings
+- live weather radar overlay from rainviewer api
+- works across all macos spaces
+- map styles: satellite, dark, black out, and light
+- region presets: continental us, northeast, southeast, midwest, and more
+- configurable refresh intervals (1 min to 1 hour)
+- settings persist between launches
 
-## Requirements
+## requirements
 
-- macOS 13+
-- Node.js 18+
-- npm
+- macos 13+
+- xcode command line tools
 
-## Installation
+## installation
 
-### 1. Clone and install dependencies
+run this in your terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/pdsullivan/hemisphere/main/install.sh | bash
+```
+
+then run the app:
+
+```bash
+~/Applications/Hemisphere
+```
+
+on first run, macos will ask for permission to control system events. click ok - this is needed to set wallpaper across all spaces.
+
+### keeping it running
+
+add `~/Applications/Hemisphere` to your login items in system settings > general > login items.
+
+## usage
+
+click the cloud icon in your menu bar to:
+
+- **refresh wallpaper** - generate a new radar image
+- **map style** - switch between satellite, dark, black out, or light
+- **region** - choose continental us or zoom into a specific region
+- **show radar** - toggle radar overlay on/off
+- **refresh interval** - set how often the wallpaper updates
+
+## development
+
+if you want to hack on hemisphere:
 
 ```bash
 git clone https://github.com/pdsullivan/hemisphere.git
-cd hemisphere
-npm install
-```
-
-### 2. Build the Swift app
-
-```bash
-cd Hemisphere
+cd hemisphere/Hemisphere
 swift build
-cd ..
+.build/debug/Hemisphere
 ```
 
-### 3. Run from the project root
+### project structure
 
-```bash
-./Hemisphere/.build/debug/Hemisphere
+```
+hemisphere/
+├── Hemisphere/
+│   ├── Package.swift
+│   └── Sources/
+│       ├── AppDelegate.swift      # menu bar setup
+│       ├── HemisphereApp.swift    # app entry point
+│       ├── LoadingOverlay.swift   # loading spinner
+│       ├── Models.swift           # map styles and regions
+│       ├── Preferences.swift      # userdefaults persistence
+│       ├── RainViewer.swift       # weather api types
+│       ├── Utilities.swift        # logging
+│       └── WallpaperManager.swift # map generation and wallpaper setting
+└── install.sh
 ```
 
-**Important:** Run from the project root directory (not from inside `Hemisphere/`) so the app can find `generate.js` and `map.html`.
+### how it works
 
-### 4. Grant permissions
+1. `MKMapSnapshotter` renders a map of the selected region
+2. rainviewer api provides real-time radar tile paths
+3. radar tiles are fetched and composited onto the map
+4. applescript sets the wallpaper across all spaces
 
-On first run, macOS will ask for permission to control System Events. Click **OK** — this is needed to set wallpaper across all Spaces.
+## troubleshooting
 
-### Keeping it running
+**wallpaper not updating?**
+- check `~/hemisphere.log` for errors
+- make sure you granted system events permission
 
-To run Hemisphere in the background:
+**"can't be opened because it's from an unidentified developer"?**
+- right-click the app and select open, then click open in the dialog
 
-```bash
-nohup ./Hemisphere/.build/debug/Hemisphere &
-```
-
-Or add it to your Login Items in System Settings > General > Login Items.
-
-## Usage
-
-Once running, click the cloud icon in your menu bar to:
-
-- **Refresh Wallpaper** - Generate a new radar image
-- **Map Style** - Switch between Satellite, Dark, or Light
-- **Auto-Refresh** - Toggle automatic updates every 10 minutes
-
-The app will automatically set the wallpaper across all your Spaces.
-
-## How It Works
-
-1. **Node.js + Puppeteer** renders a Leaflet.js map with radar overlay
-2. **RainViewer API** provides real-time weather radar data
-3. **Swift menu bar app** manages the lifecycle and settings
-4. **AppleScript** sets the wallpaper across all Spaces
-
-## Configuration
-
-Set `HEMISPHERE_SCRIPTS_DIR` environment variable to customize the scripts location:
-
-```bash
-export HEMISPHERE_SCRIPTS_DIR=/path/to/hemisphere
-```
-
-## Troubleshooting
-
-**Wallpaper not updating?**
-- Check `~/hemisphere.log` for errors
-- Make sure you granted System Events permission
-- Verify Node.js is installed: `node --version`
-
-**Script not found error?**
-- Run from the project root directory, not from `Hemisphere/`
-- Or set `HEMISPHERE_SCRIPTS_DIR` to the full path containing `generate.js`
-
-**Blank or partial wallpaper?**
-- The map tiles may still be loading. Try Refresh Wallpaper again.
-- Check your internet connection
-
-## License
+## license
 
 MIT
