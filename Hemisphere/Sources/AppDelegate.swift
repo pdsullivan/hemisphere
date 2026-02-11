@@ -27,6 +27,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Weather layer menu items
     var radarLayerMenuItem: NSMenuItem?
+    
+    // Login item
+    var startAtLoginMenuItem: NSMenuItem?
+    let launchAgentPath = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/LaunchAgents/com.hemisphere.app.plist")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Create menu bar item
@@ -107,6 +112,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(refreshIntervalItem)
 
         menu.addItem(NSMenuItem.separator())
+        
+        // Start at Login toggle
+        startAtLoginMenuItem = NSMenuItem(title: "Start at Login", action: #selector(toggleStartAtLogin(_:)), keyEquivalent: "")
+        startAtLoginMenuItem?.state = isLaunchAgentInstalled() ? .on : .off
+        menu.addItem(startAtLoginMenuItem!)
+        
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Uninstall...", action: #selector(uninstallApp), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
 
         statusItem?.menu = menu
@@ -250,5 +263,101 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func quit() {
         NSApplication.shared.terminate(nil)
+    }
+    
+    // MARK: - Launch Agent Management
+    
+    func isLaunchAgentInstalled() -> Bool {
+        return FileManager.default.fileExists(atPath: launchAgentPath.path)
+    }
+    
+    @objc func toggleStartAtLogin(_ sender: NSMenuItem) {
+        if isLaunchAgentInstalled() {
+            removeLaunchAgent()
+            sender.state = .off
+        } else {
+            installLaunchAgent()
+            sender.state = .on
+        }
+    }
+    
+    func installLaunchAgent() {
+        guard let appPath = Bundle.main.bundlePath as String? else { return }
+        let executablePath = "\(appPath)/Contents/MacOS/Hemisphere"
+        
+        let plistContent = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>Label</key>
+            <string>com.hemisphere.app</string>
+            <key>ProgramArguments</key>
+            <array>
+                <string>\(executablePath)</string>
+            </array>
+            <key>RunAtLoad</key>
+            <true/>
+            <key>KeepAlive</key>
+            <false/>
+        </dict>
+        </plist>
+        """
+        
+        do {
+            let launchAgentsDir = launchAgentPath.deletingLastPathComponent()
+            try FileManager.default.createDirectory(at: launchAgentsDir, withIntermediateDirectories: true)
+            try plistContent.write(to: launchAgentPath, atomically: true, encoding: .utf8)
+            
+            // Load the agent
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+            task.arguments = ["load", launchAgentPath.path]
+            try task.run()
+            task.waitUntilExit()
+            
+            log("LaunchAgent installed")
+        } catch {
+            log("Failed to install LaunchAgent: \(error)")
+        }
+    }
+    
+    func removeLaunchAgent() {
+        do {
+            // Unload the agent first
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+            task.arguments = ["unload", launchAgentPath.path]
+            try task.run()
+            task.waitUntilExit()
+            
+            // Remove the file
+            try FileManager.default.removeItem(at: launchAgentPath)
+            log("LaunchAgent removed")
+        } catch {
+            log("Failed to remove LaunchAgent: \(error)")
+        }
+    }
+    
+    @objc func uninstallApp() {
+        let alert = NSAlert()
+        alert.messageText = "Uninstall Hemisphere?"
+        alert.informativeText = "This will remove the app from starting at login. You can delete the app manually from your Applications folder."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Uninstall")
+        alert.addButton(withTitle: "Cancel")
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            removeLaunchAgent()
+            
+            let confirmAlert = NSAlert()
+            confirmAlert.messageText = "Uninstalled"
+            confirmAlert.informativeText = "Hemisphere will no longer start at login. The app will now quit."
+            confirmAlert.alertStyle = .informational
+            confirmAlert.addButton(withTitle: "OK")
+            confirmAlert.runModal()
+            
+            NSApplication.shared.terminate(nil)
+        }
     }
 }
