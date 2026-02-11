@@ -19,12 +19,13 @@ a macos menu bar app that sets your desktop wallpaper to a live weather radar ma
 
 ## installation
 
-### option 1: download
+### option 1: download dmg
 
-1. download `Hemisphere.zip` from the [latest release](https://github.com/pdsullivan/hemisphere/releases/latest)
-2. unzip and move `Hemisphere` to your Applications folder
+1. download `Hemisphere-Installer.dmg` from the [latest release](https://github.com/pdsullivan/hemisphere/releases/latest)
+2. open the dmg and drag `Hemisphere.app` to Applications
 3. right-click and select "open" to bypass gatekeeper
 4. grant system events permission when prompted
+5. enable "start at login" from the menu bar icon
 
 ### option 2: install script
 
@@ -34,17 +35,9 @@ requires xcode command line tools (`xcode-select --install`)
 curl -fsSL https://raw.githubusercontent.com/pdsullivan/hemisphere/main/install.sh | bash
 ```
 
-then run:
-
-```bash
-~/Applications/Hemisphere
-```
+this will build, install, and set up hemisphere to start automatically on login.
 
 on first run, macos will ask for permission to control system events. click ok - this is needed to set wallpaper across all spaces.
-
-### keeping it running
-
-add `~/Applications/Hemisphere` to your login items in system settings > general > login items.
 
 ## usage
 
@@ -55,6 +48,8 @@ click the cloud icon in your menu bar to:
 - **region** - choose continental us or zoom into a specific region
 - **show radar** - toggle radar overlay on/off
 - **refresh interval** - set how often the wallpaper updates
+- **start at login** - toggle auto-start on login
+- **uninstall** - remove auto-start and quit
 
 ## development
 
@@ -62,27 +57,17 @@ if you want to hack on hemisphere:
 
 ```bash
 git clone https://github.com/pdsullivan/hemisphere.git
-cd hemisphere/Hemisphere
-swift build
-.build/debug/Hemisphere
+cd hemisphere
+./scripts/build-dmg.sh
 ```
 
-### project structure
+this builds the app and opens the dmg installer.
 
-```
-hemisphere/
-├── Hemisphere/
-│   ├── Package.swift
-│   └── Sources/
-│       ├── AppDelegate.swift      # menu bar setup
-│       ├── HemisphereApp.swift    # app entry point
-│       ├── LoadingOverlay.swift   # loading spinner
-│       ├── Models.swift           # map styles and regions
-│       ├── Preferences.swift      # userdefaults persistence
-│       ├── RainViewer.swift       # weather api types
-│       ├── Utilities.swift        # logging
-│       └── WallpaperManager.swift # map generation and wallpaper setting
-└── install.sh
+to build just the app bundle:
+
+```bash
+./scripts/build-app.sh
+open build/Hemisphere.app
 ```
 
 ### how it works
